@@ -1,5 +1,5 @@
 const getLastSeenActivityBlock = () => {
-  const lastVisitDate = new Date(Date.parse('2018-09-13T00:30:50.349Z'));
+  const lastVisitDate = new Date(Date.parse('2017-09-13T00:30:50.349Z'));
   const pageItems = document.querySelectorAll('relative-time');
 
   for (const item of pageItems) {
@@ -23,4 +23,8 @@ const insertOldActivityTextBefore = (element) => {
 };
 
 const lastSeenActivityElement = getLastSeenActivityBlock();
-insertOldActivityTextBefore(lastSeenActivityElement);
+
+// If not all activities displayed are new
+// which means there's at least one element the user has already seen
+if (lastSeenActivityElement)
+  insertOldActivityTextBefore(lastSeenActivityElement);
