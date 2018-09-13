@@ -1,11 +1,15 @@
 const getLastSeenActivityBlock = () => {
-  const lastVisitDate = new Date();
-  const pageItems = document.querySelectorAll('relative-time');
+  const lastVisitDate = new Date(Date.parse(localStorage.getItem('_ActivityFeedSeparator_lastVisitDate')));
+  if (isNaN(lastVisitDate))
+    return null;
 
+  const pageItems = document.querySelectorAll('relative-time');
   for (const item of pageItems) {
     if (lastVisitDate > item._date)
       return item.closest('.body').parentElement;
   }
+
+  return null;
 };
 
 const insertOldActivityTextBefore = (element) => {
@@ -30,5 +34,8 @@ const lastSeenActivityElement = getLastSeenActivityBlock();
 // If there's at least one activity in the page that we've already seen
 if (lastSeenActivityElement)
   insertOldActivityTextBefore(lastSeenActivityElement);
-
 // Else (if all activities are new) do nothing
+
+
+// Update last visit date
+localStorage.setItem('_ActivityFeedSeparator_lastVisitDate', new Date().toISOString());
