@@ -15,19 +15,20 @@ const insertOldActivityTextBefore = (element) => {
   div.style.textAlign = 'center';
   div.style.width = '100%';
 
-  // Remove previous element's bottom border
   const previousElementWithBottomBorder = element.previousElementSibling.querySelector('.d-flex');
+  // If this is not the first activity on the page
   if (previousElementWithBottomBorder)
+    // Remove previous activity's bottom border
     previousElementWithBottomBorder.classList.remove('border-bottom');
 
-  // Insert our block before the last seen activity block
+  // Insert our block before the last seen activity
   element.parentNode.insertBefore(div, element);
 };
 
 const lastSeenActivityElement = getLastSeenActivityBlock();
-console.log(lastSeenActivityElement);
 
-// If not all activities displayed are new
-// which means there's at least one element the user has already seen
+// If there's at least one activity in the page that we've already seen
 if (lastSeenActivityElement)
   insertOldActivityTextBefore(lastSeenActivityElement);
+
+// Else (if all activities are new) do nothing
