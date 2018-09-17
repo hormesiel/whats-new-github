@@ -15,7 +15,7 @@ const getMostRecentSeenActivityBlock = () => {
 const getMostRecentUnseenActivityBlock = () => {
   const lastVisitDate = new Date(Date.parse(localStorage.getItem('_ActivityFeedSeparator_lastVisitDate')));
   if (isNaN(lastVisitDate))
-    return null;
+    return document.querySelectorAll('#dashboard .news > div')[0];
 
   const pageItems = document.querySelectorAll('relative-time');
   for (const item of pageItems) {
