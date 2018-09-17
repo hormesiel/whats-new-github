@@ -12,6 +12,31 @@ const getMostRecentSeenActivityBlock = () => {
   return null;
 };
 
+const getMostRecentUnseenActivityBlock = () => {
+  const lastVisitDate = new Date(Date.parse(localStorage.getItem('_ActivityFeedSeparator_lastVisitDate')));
+  if (isNaN(lastVisitDate))
+    return null;
+
+  const pageItems = document.querySelectorAll('relative-time');
+  for (const item of pageItems) {
+    if (lastVisitDate < item._date)
+      return item.closest('.body').parentElement;
+  }
+
+  return null;
+};
+
+const insertNewActivityTextBefore = (element) => {
+  const div = document.createElement('div');
+  div.textContent = 'New activity ↓';
+  div.style.margin = '1rem 0';
+  div.style.textAlign = 'center';
+  div.style.width = '100%';
+
+  // Insert our block before the last seen activity
+  element.parentNode.insertBefore(div, element);
+};
+
 const insertOldActivityTextBefore = (element) => {
   const div = document.createElement('div');
   div.textContent = 'Old activity ↓';
@@ -29,12 +54,17 @@ const insertOldActivityTextBefore = (element) => {
   element.parentNode.insertBefore(div, element);
 };
 
-const mostRecentSeenActivityElement = getMostRecentSeenActivityBlock();
+//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//
 
-// If there's at least one activity in the page that we've already seen
+const mostRecentSeenActivityElement = getMostRecentSeenActivityBlock();
+// If there's at least one seen activity in the page
 if (mostRecentSeenActivityElement)
   insertOldActivityTextBefore(mostRecentSeenActivityElement);
-// Else (if all activities are new) do nothing
+
+const mostRecentUnseenActivityElement = getMostRecentUnseenActivityBlock();
+// If there's at least one unseen activity in the page
+if (mostRecentUnseenActivityElement)
+  insertNewActivityTextBefore(mostRecentUnseenActivityElement);
 
 
 // Update last visit date
