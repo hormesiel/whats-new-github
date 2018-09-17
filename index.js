@@ -56,15 +56,19 @@ const insertOldActivityTextBefore = (element) => {
 
 //-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//
 
-const mostRecentSeenActivityElement = getMostRecentSeenActivityBlock();
-// If there's at least one seen activity in the page
-if (mostRecentSeenActivityElement)
-  insertOldActivityTextBefore(mostRecentSeenActivityElement);
+const mo = new MutationObserver(mutationsList => {
+  mo.disconnect();
 
-const mostRecentUnseenActivityElement = getMostRecentUnseenActivityBlock();
-// If there's at least one unseen activity in the page
-if (mostRecentUnseenActivityElement)
-  insertNewActivityTextBefore(mostRecentUnseenActivityElement);
+  const mostRecentSeenActivityElement = getMostRecentSeenActivityBlock();
+  if (mostRecentSeenActivityElement)
+    insertOldActivityTextBefore(mostRecentSeenActivityElement);
+
+  const mostRecentUnseenActivityElement = getMostRecentUnseenActivityBlock();
+  if (mostRecentUnseenActivityElement)
+    insertNewActivityTextBefore(mostRecentUnseenActivityElement);
+});
+const feed = document.querySelector('#dashboard .news');
+mo.observe(feed, { childList: true });
 
 
 // Update last visit date
