@@ -19,7 +19,7 @@ const insertOldActivityTextBefore = (element) => {
   div.style.textAlign = 'center';
   div.style.width = '100%';
 
-  const previousElementWithBottomBorder = element.previousElementSibling.querySelector('.d-flex');
+  const previousElementWithBottomBorder = element.previousElementSibling.querySelector('.border-bottom');
   // If this is not the first activity on the page
   if (previousElementWithBottomBorder)
     // Remove previous activity's bottom border
