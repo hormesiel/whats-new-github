@@ -1,4 +1,4 @@
-const getLastSeenActivityBlock = () => {
+const getMostRecentSeenActivityBlock = () => {
   const lastVisitDate = new Date(Date.parse(localStorage.getItem('_ActivityFeedSeparator_lastVisitDate')));
   if (isNaN(lastVisitDate))
     return null;
@@ -29,11 +29,11 @@ const insertOldActivityTextBefore = (element) => {
   element.parentNode.insertBefore(div, element);
 };
 
-const lastSeenActivityElement = getLastSeenActivityBlock();
+const mostRecentSeenActivityElement = getMostRecentSeenActivityBlock();
 
 // If there's at least one activity in the page that we've already seen
-if (lastSeenActivityElement)
-  insertOldActivityTextBefore(lastSeenActivityElement);
+if (mostRecentSeenActivityElement)
+  insertOldActivityTextBefore(mostRecentSeenActivityElement);
 // Else (if all activities are new) do nothing
 
 
