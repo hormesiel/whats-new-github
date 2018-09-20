@@ -5,7 +5,9 @@ const getMostRecentSeenActivityBlock = () => {
 
   const pageItems = document.querySelectorAll('relative-time');
   for (const item of pageItems) {
-    if (lastVisitDate > item._date)
+    const itemDate = new Date(Date.parse(item.getAttribute('datetime')));
+
+    if (lastVisitDate > itemDate)
       return item.closest('.body').parentElement;
   }
 
@@ -19,7 +21,9 @@ const getMostRecentUnseenActivityBlock = () => {
 
   const pageItems = document.querySelectorAll('relative-time');
   for (const item of pageItems) {
-    if (lastVisitDate < item._date)
+    const itemDate = new Date(Date.parse(item.getAttribute('datetime')));
+
+    if (lastVisitDate < itemDate)
       return item.closest('.body').parentElement;
   }
 
@@ -57,6 +61,10 @@ const insertOldActivityTextBefore = (element) => {
 //-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//
 
 const mo = new MutationObserver(mutationsList => {
+  const feedLoaded = document.querySelector('#dashboard > .news > .js-dashboard-deferred') == null;
+  if (!feedLoaded)
+    return;
+
   mo.disconnect();
 
   const mostRecentSeenActivityElement = getMostRecentSeenActivityBlock();
@@ -66,10 +74,10 @@ const mo = new MutationObserver(mutationsList => {
   const mostRecentUnseenActivityElement = getMostRecentUnseenActivityBlock();
   if (mostRecentUnseenActivityElement)
     insertNewActivityTextBefore(mostRecentUnseenActivityElement);
+
+  // Update last visit date
+  localStorage.setItem('_ActivityFeedSeparator_lastVisitDate', new Date().toISOString());
 });
-const feed = document.querySelector('#dashboard .news');
+
+const feed = document.querySelector('#dashboard > .news');
 mo.observe(feed, { childList: true });
-
-
-// Update last visit date
-localStorage.setItem('_ActivityFeedSeparator_lastVisitDate', new Date().toISOString());
