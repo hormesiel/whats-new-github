@@ -33,6 +33,7 @@ const getMostRecentUnseenActivityBlock = () => {
 const insertNewActivityTextBefore = (element) => {
   const div = document.createElement('div');
   div.textContent = 'New activity ↓';
+  div.style.fontSize = '1rem';
   div.style.margin = '1rem 0';
   div.style.textAlign = 'center';
   div.style.width = '100%';
@@ -44,6 +45,7 @@ const insertNewActivityTextBefore = (element) => {
 const insertOldActivityTextBefore = (element) => {
   const div = document.createElement('div');
   div.textContent = 'Old activity ↓';
+  div.style.fontSize = '1rem';
   div.style.margin = '1rem 0';
   div.style.textAlign = 'center';
   div.style.width = '100%';
