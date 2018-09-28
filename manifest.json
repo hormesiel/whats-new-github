@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Activity Feed Separators for GitHub",
-  "version": "0.0",
+  "version": "1.0",
 
   "description": "See what's new and what's not in your GitHub's activity feed.",
   "icons": {
