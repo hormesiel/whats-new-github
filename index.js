@@ -1,4 +1,4 @@
-const lastVisitDate = new Date(Date.parse(localStorage.getItem('_ActivityFeedSeparator_lastVisitDate')));
+const lastVisitDate = new Date(Date.parse(localStorage.getItem('activity_feed.last_visit')));
 
 const buildTextBlock = (text) => {
   const div = document.createElement('div');
@@ -106,4 +106,4 @@ const mo = new MutationObserver(mutationsList => {
 mo.observe(feed, { childList: true });
 
 // Update last visit date
-localStorage.setItem('_ActivityFeedSeparator_lastVisitDate', new Date().toISOString());
+localStorage.setItem('activity_feed.last_visit', new Date().toISOString());
