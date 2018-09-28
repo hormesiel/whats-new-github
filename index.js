@@ -1,3 +1,5 @@
+const lastVisitDate = new Date(Date.parse(localStorage.getItem('_ActivityFeedSeparator_lastVisitDate')));
+
 const buildTextBlock = (text) => {
   const div = document.createElement('div');
   div.textContent = text;
@@ -18,7 +20,6 @@ const buildTextBlock = (text) => {
 };
 
 const getMostRecentSeenActivityBlock = () => {
-  const lastVisitDate = new Date(Date.parse(localStorage.getItem('_ActivityFeedSeparator_lastVisitDate')));
   if (isNaN(lastVisitDate))
     return null;
 
@@ -34,7 +35,6 @@ const getMostRecentSeenActivityBlock = () => {
 };
 
 const getMostRecentUnseenActivityBlock = () => {
-  const lastVisitDate = new Date(Date.parse(localStorage.getItem('_ActivityFeedSeparator_lastVisitDate')));
   if (isNaN(lastVisitDate))
     return document.querySelectorAll('#dashboard .news > div')[0];
 
@@ -67,24 +67,43 @@ const insertOldActivityTextBefore = (element) => {
 
 //-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//
 
+const feed = document.querySelector('#dashboard > .news');
+
+let newAdded = false;
+let oldAdded = false;
+
 const mo = new MutationObserver(mutationsList => {
   const feedLoaded = document.querySelector('#dashboard > .news > .js-dashboard-deferred') == null;
   if (!feedLoaded)
     return;
 
-  mo.disconnect();
+  if (!oldAdded) {
+    const mostRecentSeenActivityElement = getMostRecentSeenActivityBlock();
+    if (mostRecentSeenActivityElement) {
+      insertOldActivityTextBefore(mostRecentSeenActivityElement);
+      oldAdded = true;
+    }
+  }
 
-  const mostRecentSeenActivityElement = getMostRecentSeenActivityBlock();
-  if (mostRecentSeenActivityElement)
-    insertOldActivityTextBefore(mostRecentSeenActivityElement);
+  if (!newAdded) {
+    const mostRecentUnseenActivityElement = getMostRecentUnseenActivityBlock();
+    if (mostRecentUnseenActivityElement) {
+      insertNewActivityTextBefore(mostRecentUnseenActivityElement);
+      newAdded = true;
+    }
+  }
 
-  const mostRecentUnseenActivityElement = getMostRecentUnseenActivityBlock();
-  if (mostRecentUnseenActivityElement)
-    insertNewActivityTextBefore(mostRecentUnseenActivityElement);
+  /* If the 'Old ↓' text has been added to the page already, 'New ↓' has inevitably been added as well so we can stop
+  listening for mutation events.
 
-  // Update last visit date
-  localStorage.setItem('_ActivityFeedSeparator_lastVisitDate', new Date().toISOString());
+  * If not and we have no last visit date, it means it's the user's first visit with this extension in which case
+  there'll be no 'Old ↓' text to add because all activites are new to us, so we can stop listening too. */
+  if (oldAdded || isNaN(lastVisitDate))
+    mo.disconnect();
 });
 
-const feed = document.querySelector('#dashboard > .news');
+// Listen for initial/more activities loading to add the text blocks at the right places
 mo.observe(feed, { childList: true });
+
+// Update last visit date
+localStorage.setItem('_ActivityFeedSeparator_lastVisitDate', new Date().toISOString());
