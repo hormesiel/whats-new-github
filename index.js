@@ -23,7 +23,7 @@ const getMostRecentSeenActivityBlock = () => {
   if (isNaN(lastVisitDate))
     return null;
 
-  const pageItems = document.querySelectorAll('relative-time');
+  const pageItems = document.querySelectorAll('.body relative-time');
   for (const item of pageItems) {
     const itemDate = new Date(Date.parse(item.getAttribute('datetime')));
 
@@ -38,7 +38,7 @@ const getMostRecentUnseenActivityBlock = () => {
   if (isNaN(lastVisitDate))
     return document.querySelectorAll('#dashboard .news > div')[0];
 
-  const pageItems = document.querySelectorAll('relative-time');
+  const pageItems = document.querySelectorAll('.body relative-time');
   for (const item of pageItems) {
     const itemDate = new Date(Date.parse(item.getAttribute('datetime')));
 
