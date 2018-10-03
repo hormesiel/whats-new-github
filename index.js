@@ -35,8 +35,10 @@ const getMostRecentSeenActivityBlock = () => {
 };
 
 const getMostRecentUnseenActivityBlock = () => {
-  if (isNaN(lastVisitDate))
-    return document.querySelectorAll('#dashboard .news > div')[0];
+  if (isNaN(lastVisitDate)) {
+    // Return the first activity on the page
+    return document.querySelector('#dashboard .news > .js-all-activity-header ~ div');
+  }
 
   const pageItems = document.querySelectorAll('.body relative-time');
   for (const item of pageItems) {
