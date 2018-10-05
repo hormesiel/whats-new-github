@@ -15,6 +15,8 @@ const buildTextBlock = (text) => {
   div.style.textAlign = 'center';
   div.style.textTransform = 'uppercase';
   div.style.width = 'fit-content';
+  if (div.style.width == '')
+    div.style.width = '-moz-fit-content';
 
   return div;
 };
