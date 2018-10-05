@@ -12,8 +12,10 @@ const buildTextBlock = (text) => {
   div.style.fontSize = '0.9375rem';
   div.style.margin = '1rem auto';
   div.style.padding = '0.1rem 1rem';
+  div.style.position = 'sticky';
   div.style.textAlign = 'center';
   div.style.textTransform = 'uppercase';
+  div.style.top = '2rem';
   div.style.width = 'fit-content';
   if (div.style.width == '')
     div.style.width = '-moz-fit-content';
