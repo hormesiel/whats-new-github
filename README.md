@@ -6,4 +6,4 @@
 
 This extension helps you see which activities happened since you last visited GitHub and which one you've already seen, and it does so by dividing your activity feed into two sections.
 
-Get it on the [Chrome Web Store](https://chrome.google.com/webstore/detail/whats-new-on-github/ldleapnlgbkpkabhbkkeangmnfpikahe).
+Available for [Chrome](https://chrome.google.com/webstore/detail/whats-new-on-github/ldleapnlgbkpkabhbkkeangmnfpikahe) and [Firefox](https://addons.mozilla.org/fr/firefox/addon/whats-new-github/).
