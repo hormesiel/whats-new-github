@@ -4,12 +4,15 @@ const buildTextBlock = (text) => {
   const div = document.createElement('div');
   div.textContent = text;
 
-  div.style.background = 'white';
-  div.style.border = '1px solid #24292e';
-  div.style.borderRadius = '14px';
+  /* Using GitHub classes to ensure UI consistency. Sets :
+  - background
+  - border
+  - border-radius
+  - color */
+  div.classList.add('Box', 'text-gray');
+
   div.style.boxShadow = '0 3px #00000022';
   div.style.fontFamily = 'monospace';
-  div.style.fontSize = '0.9375rem';
   div.style.margin = '1rem auto';
   div.style.padding = '0.1rem 1rem';
   div.style.position = 'sticky';
