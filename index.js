@@ -1,5 +1,3 @@
-const lastVisitDate = new Date(Date.parse(localStorage.getItem('activity_feed.last_visit')));
-
 const buildTextBlock = (text) => {
   const div = document.createElement('div');
   div.textContent = text;
@@ -26,7 +24,7 @@ const buildTextBlock = (text) => {
   return div;
 };
 
-const getMostRecentSeenActivityBlock = () => {
+const getMostRecentSeenActivityBlock = (lastVisitDate) => {
   if (isNaN(lastVisitDate))
     return null;
 
@@ -41,7 +39,7 @@ const getMostRecentSeenActivityBlock = () => {
   return null;
 };
 
-const getMostRecentUnseenActivityBlock = () => {
+const getMostRecentUnseenActivityBlock = (lastVisitDate) => {
   if (isNaN(lastVisitDate)) {
     // Return the first activity on the page
     return document.querySelector('#dashboard .news > .js-all-activity-header ~ div');
@@ -76,43 +74,46 @@ const insertOldActivityTextBefore = (element) => {
 
 //-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//
 
-const feed = document.querySelector('#dashboard > .news');
+chrome.storage.sync.get(['last_visit_date'], (values) => {
+  const lastVisitDate = new Date(Date.parse(values.last_visit_date));
+  const feed = document.querySelector('#dashboard > .news');
 
-let newAdded = false;
-let oldAdded = false;
+  let newAdded = false;
+  let oldAdded = false;
 
-const mo = new MutationObserver(mutationsList => {
-  const feedLoaded = document.querySelector('#dashboard > .news > .js-dashboard-deferred') == null;
-  if (!feedLoaded)
-    return;
+  const mo = new MutationObserver(mutationsList => {
+    const feedLoaded = document.querySelector('#dashboard > .news > .js-dashboard-deferred') == null;
+    if (!feedLoaded)
+      return;
 
-  if (!oldAdded) {
-    const mostRecentSeenActivityElement = getMostRecentSeenActivityBlock();
-    if (mostRecentSeenActivityElement) {
-      insertOldActivityTextBefore(mostRecentSeenActivityElement);
-      oldAdded = true;
+    if (!oldAdded) {
+      const mostRecentSeenActivityElement = getMostRecentSeenActivityBlock(lastVisitDate);
+      if (mostRecentSeenActivityElement) {
+        insertOldActivityTextBefore(mostRecentSeenActivityElement);
+        oldAdded = true;
+      }
     }
-  }
 
-  if (!newAdded) {
-    const mostRecentUnseenActivityElement = getMostRecentUnseenActivityBlock();
-    if (mostRecentUnseenActivityElement) {
-      insertNewActivityTextBefore(mostRecentUnseenActivityElement);
-      newAdded = true;
+    if (!newAdded) {
+      const mostRecentUnseenActivityElement = getMostRecentUnseenActivityBlock(lastVisitDate);
+      if (mostRecentUnseenActivityElement) {
+        insertNewActivityTextBefore(mostRecentUnseenActivityElement);
+        newAdded = true;
+      }
     }
-  }
 
-  /* If the 'Old ↓' text has been added to the page already, 'New ↓' has inevitably been added as well so we can stop
-  listening for mutation events.
+    /* If the 'Old ↓' text has been added to the page already, 'New ↓' has inevitably been added as well so we can stop
+    listening for mutation events.
 
-  * If not and we have no last visit date, it means it's the user's first visit with this extension in which case
-  there'll be no 'Old ↓' text to add because all activites are new to us, so we can stop listening too. */
-  if (oldAdded || isNaN(lastVisitDate))
-    mo.disconnect();
+    * If not and we have no last visit date, it means it's the user's first visit with this extension in which case
+    there'll be no 'Old ↓' text to add because all activites are new to us, so we can stop listening too. */
+    if (oldAdded || isNaN(lastVisitDate))
+      mo.disconnect();
+  });
+
+  // Listen for initial/more activities loading to add the text blocks at the right places
+  mo.observe(feed, { childList: true });
+
+  // Update last visit date
+  chrome.storage.sync.set({'last_visit_date': new Date().toISOString()});
 });
-
-// Listen for initial/more activities loading to add the text blocks at the right places
-mo.observe(feed, { childList: true });
-
-// Update last visit date
-localStorage.setItem('activity_feed.last_visit', new Date().toISOString());
