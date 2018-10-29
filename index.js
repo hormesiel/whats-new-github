@@ -10,7 +10,7 @@ const buildTextBlock = (text) => {
   div.classList.add('Box', 'text-gray');
 
   div.setAttribute('style', `
-    box-shadow: 0 3px #00000022;
+    box-shadow: 0 3px 5px #00000011;
     font-family: monospace;
     margin: 1rem auto;
     padding: 0.1rem 1rem;
