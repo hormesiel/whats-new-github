@@ -1,6 +1,6 @@
 const buildTextBlock = (text) => {
   const div = document.createElement('div');
-  div.textContent = text;
+  div.innerHTML = text;
 
   /* Using GitHub classes to ensure UI consistency. Sets :
   - background
@@ -11,9 +11,9 @@ const buildTextBlock = (text) => {
 
   div.setAttribute('style', `
     box-shadow: 0 3px 5px #00000011;
-    font-family: monospace;
+    font-size: 0.8rem;
     margin: 1rem auto;
-    padding: 0.1rem 1rem;
+    padding: 0.4rem 1rem;
     position: sticky;
     text-align: center;
     text-transform: uppercase;
@@ -59,7 +59,7 @@ const getMostRecentUnseenActivityBlock = (lastVisitDate) => {
 
 const insertNewActivityTextBefore = (element) => {
   // Insert our block before the last seen activity
-  element.parentNode.insertBefore(buildTextBlock('New ↓'), element);
+  element.parentNode.insertBefore(buildTextBlock('New &nbsp;↓'), element);
 };
 
 const insertOldActivityTextBefore = (element) => {
@@ -70,7 +70,7 @@ const insertOldActivityTextBefore = (element) => {
     previousElementWithBottomBorder.classList.remove('border-bottom');
 
   // Insert our block before the last seen activity
-  element.parentNode.insertBefore(buildTextBlock('Old ↓'), element);
+  element.parentNode.insertBefore(buildTextBlock('Old &nbsp;↓'), element);
 };
 
 //-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//
