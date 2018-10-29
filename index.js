@@ -9,17 +9,18 @@ const buildTextBlock = (text) => {
   - color */
   div.classList.add('Box', 'text-gray');
 
-  div.style.boxShadow = '0 3px #00000022';
-  div.style.fontFamily = 'monospace';
-  div.style.margin = '1rem auto';
-  div.style.padding = '0.1rem 1rem';
-  div.style.position = 'sticky';
-  div.style.textAlign = 'center';
-  div.style.textTransform = 'uppercase';
-  div.style.top = '2rem';
-  div.style.width = 'fit-content';
-  if (div.style.width == '')
-    div.style.width = '-moz-fit-content';
+  div.setAttribute('style', `
+    box-shadow: 0 3px #00000022;
+    font-family: 'monospace';
+    margin: 1rem auto;
+    padding: 0.1rem 1rem;
+    position: sticky;
+    text-align: center;
+    text-transform: uppercase;
+    top: 2rem;
+    width: -moz-fit-content;
+    width: fit-content;
+  `);
 
   return div;
 };
