@@ -76,6 +76,12 @@ const insertOldActivityTextBefore = (element) => {
 //-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//
 
 chrome.storage.sync.get(['last_visit_date'], (values) => {
+  // localStorage's value overrides saved value – useful for testing purpose & backward compatibility with 1.1.0
+  if (localStorage.getItem('activity_feed.last_visit')) {
+    values.last_visit_date = localStorage.getItem('activity_feed.last_visit');
+    localStorage.removeItem('activity_feed.last_visit');
+  }
+
   const lastVisitDate = new Date(Date.parse(values.last_visit_date));
   const feed = document.querySelector('#dashboard > .news');
 
