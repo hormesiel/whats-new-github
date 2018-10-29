@@ -14,5 +14,11 @@
     "js": ["index.js"],
     "run_at": "document_end"
   }],
-  "permissions": ["storage"]
+  "permissions": ["storage"],
+
+  "applications": {
+    "gecko": {
+      "id": "mickael.allonneau@gmail.com"
+    }
+  }
 }
