@@ -11,7 +11,7 @@ const buildTextBlock = (text) => {
 
   div.setAttribute('style', `
     box-shadow: 0 3px #00000022;
-    font-family: 'monospace';
+    font-family: monospace;
     margin: 1rem auto;
     padding: 0.1rem 1rem;
     position: sticky;
