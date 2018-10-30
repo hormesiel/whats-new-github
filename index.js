@@ -18,8 +18,7 @@ const buildTextBlock = (text) => {
     text-align: center;
     text-transform: uppercase;
     top: 2rem;
-    width: -moz-fit-content;
-    width: fit-content;
+    width: 4.7rem;
   `);
 
   return div;
