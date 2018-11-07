@@ -62,11 +62,14 @@ const insertNewActivityTextBefore = (element) => {
 };
 
 const insertOldActivityTextBefore = (element) => {
-  const previousElementWithBottomBorder = element.previousElementSibling.querySelector('.border-bottom');
   // If this is not the first activity on the page
-  if (previousElementWithBottomBorder)
+  if (element.previousElementSibling) {
+    // Get the child who has the border
+    const previousElementWithBottomBorder = element.previousElementSibling.querySelector('.border-bottom');
+
     // Remove previous activity's bottom border
     previousElementWithBottomBorder.classList.remove('border-bottom');
+  }
 
   // Insert our block before the last seen activity
   element.parentNode.insertBefore(buildTextBlock('Old &nbsp;↓'), element);
