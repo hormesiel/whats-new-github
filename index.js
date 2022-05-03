@@ -1,4 +1,54 @@
-const buildTextBlock = (text) => {
+//
+// VARIABLES
+//
+
+const STORAGE_KEY_LAST_VISIT_DATE = 'whats-new-github.last-visit-date';
+
+let syncStorageValues;
+
+//
+// FUNCTIONS
+//
+
+function addLabelBeforeElement(text, element) {
+  const labelElement = createLabelElement(text);
+
+  // Insert the element in the page
+  element.parentNode.insertBefore(labelElement, element);
+
+  // Remove the previous element's bottom order if needed (not needed if there's no element before the label)
+  const previousElement = labelElement.previousElementSibling;
+  if (previousElement)
+    previousElement.querySelector('.border-bottom').classList.remove('border-bottom');
+
+  // Increase top margin if label is at the top of the feed
+  else
+    labelElement.style.marginTop = '2rem';
+}
+
+function addLabelsToFeed(feedElementParent) {
+  const feedElement = getFeedElementFromParent(feedElementParent);
+  const lastVisitDate = getLastVisitDate();
+
+  addNewLabelToFeed(feedElement, lastVisitDate);
+  addOldLabelToFeed(feedElement, lastVisitDate);
+}
+
+function addNewLabelToFeed(feedElement, lastVisitDate) {
+  const mostRecentUnseenActivityElement = getMostRecentUnseenActivityBlock(feedElement, lastVisitDate);
+
+  if (mostRecentUnseenActivityElement)
+    addLabelBeforeElement('New &nbsp;↓', mostRecentUnseenActivityElement);
+}
+
+function addOldLabelToFeed(feedElement, lastVisitDate) {
+  const mostRecentSeenActivityElement = getMostRecentSeenActivityBlock(feedElement, lastVisitDate);
+
+  if (mostRecentSeenActivityElement)
+    addLabelBeforeElement('Old &nbsp;↓', mostRecentSeenActivityElement);
+}
+
+function createLabelElement(text) {
   const div = document.createElement('div');
   div.innerHTML = text;
 
@@ -22,107 +72,98 @@ const buildTextBlock = (text) => {
   `);
 
   return div;
-};
+}
 
-const getMostRecentSeenActivityBlock = (lastVisitDate) => {
+function dashboardHasTabs() {
+  return document.querySelector('#dashboard tab-container') != null;
+}
+
+function getFeedElementFromParent(feedElementParent) {
+  return feedElementParent.querySelector('div[data-repository-hovercards-enabled]');
+}
+
+function getLastVisitDate() {
+  // Allow to return a predefined value from the local storage, for test purposes
+  const localStorageValue = localStorage.getItem(STORAGE_KEY_LAST_VISIT_DATE);
+  if (localStorageValue)
+    return new Date(localStorageValue);
+
+  // Otherwise return the real value
+  return new Date(syncStorageValues[STORAGE_KEY_LAST_VISIT_DATE]);
+}
+
+function getMostRecentSeenActivityBlock(feedElement, lastVisitDate) {
+  // If user has never visited this feed, then no element to return
   if (isNaN(lastVisitDate))
     return null;
 
-  const pageItems = document.querySelectorAll('.body relative-time');
-  for (const item of pageItems) {
-    const itemDate = new Date(Date.parse(item.getAttribute('datetime')));
+  // Get all `relative-time` elements that are children of our feed element
+  const feedChildrenRelativeTimes = feedElement.querySelectorAll('relative-time');
 
-    if (lastVisitDate > itemDate)
-      return item.closest('.body').parentElement;
+  // Find the first element showing an activity that happened before the user's last visit
+  for (const relativeTimeElement of feedChildrenRelativeTimes) {
+    const datetimeAttr = relativeTimeElement.getAttribute('datetime');
+    const itemDate = new Date(datetimeAttr);
+
+    if (itemDate < lastVisitDate)
+      return relativeTimeElement.closest('.body').parentElement;
   }
 
+  // If the element was not found, which means that it's older than all the activities shown on the page
   return null;
-};
+}
 
-const getMostRecentUnseenActivityBlock = (lastVisitDate) => {
-  if (isNaN(lastVisitDate)) {
-    // Return the first activity on the page
-    return document.querySelector('#dashboard .news > .js-all-activity-header ~ div');
+function getMostRecentUnseenActivityBlock(feedElement, lastVisitDate) {
+  // If user has never visited this feed, then no element to return
+  if (isNaN(lastVisitDate))
+    return null;
+
+  // Get all `relative-time` elements that are children of our feed element
+  const feedChildrenRelativeTimes = feedElement.querySelectorAll('relative-time');
+
+  // Find the first element showing an activity that happened after the user's last visit
+  for (const relativeTimeElement of feedChildrenRelativeTimes) {
+    const datetimeAttr = relativeTimeElement.getAttribute('datetime');
+    const itemDate = new Date(datetimeAttr);
+
+    if (itemDate > lastVisitDate)
+      return relativeTimeElement.closest('.body').parentElement;
   }
 
-  const pageItems = document.querySelectorAll('.body relative-time');
-  for (const item of pageItems) {
-    const itemDate = new Date(Date.parse(item.getAttribute('datetime')));
-
-    if (lastVisitDate < itemDate)
-      return item.closest('.body').parentElement;
-  }
-
+  // If no element was found, it means that all shown activities are older than the user's last visit
   return null;
-};
+}
 
-const insertNewActivityTextBefore = (element) => {
-  // Insert our block before the last seen activity
-  element.parentNode.insertBefore(buildTextBlock('New &nbsp;↓'), element);
-};
+function getFeedElementParent() {
+  return document.querySelector('#panel-1');
+}
 
-const insertOldActivityTextBefore = (element) => {
-  // If this is not the first activity on the page
-  if (element.previousElementSibling) {
-    // Get the child who has the border
-    const previousElementWithBottomBorder = element.previousElementSibling.querySelector('.border-bottom');
+function loadSyncStorageValues(callback) {
+  return chrome.storage.sync.get(null, callback);
+}
 
-    // Remove previous activity's bottom border
-    previousElementWithBottomBorder.classList.remove('border-bottom');
-  }
+function updateLastVisitDate() {
+  const map = {};
+  map[STORAGE_KEY_LAST_VISIT_DATE] = new Date().toISOString();
 
-  // Insert our block before the last seen activity
-  element.parentNode.insertBefore(buildTextBlock('Old &nbsp;↓'), element);
-};
+  chrome.storage.sync.set(map);
+}
 
-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//-//
-
-chrome.storage.sync.get(['last_visit_date'], (values) => {
-  // localStorage's value overrides saved value – useful for testing purpose & backward compatibility with 1.1.0
-  if (localStorage.getItem('activity_feed.last_visit')) {
-    values.last_visit_date = localStorage.getItem('activity_feed.last_visit');
-    localStorage.removeItem('activity_feed.last_visit');
-  }
-
-  const lastVisitDate = new Date(Date.parse(values.last_visit_date));
-  const feed = document.querySelector('#dashboard > .news');
-
-  let newAdded = false;
-  let oldAdded = false;
-
-  const mo = new MutationObserver(mutationsList => {
-    const feedLoaded = document.querySelector('#dashboard > .news > .js-dashboard-deferred') == null;
-    if (!feedLoaded)
-      return;
-
-    if (!oldAdded) {
-      const mostRecentSeenActivityElement = getMostRecentSeenActivityBlock(lastVisitDate);
-      if (mostRecentSeenActivityElement) {
-        insertOldActivityTextBefore(mostRecentSeenActivityElement);
-        oldAdded = true;
-      }
-    }
-
-    if (!newAdded) {
-      const mostRecentUnseenActivityElement = getMostRecentUnseenActivityBlock(lastVisitDate);
-      if (mostRecentUnseenActivityElement) {
-        insertNewActivityTextBefore(mostRecentUnseenActivityElement);
-        newAdded = true;
-      }
-    }
-
-    /* If the 'Old ↓' text has been added to the page already, 'New ↓' has inevitably been added as well so we can stop
-    listening for mutation events.
-
-    * If not and we have no last visit date, it means it's the user's first visit with this extension in which case
-    there'll be no 'Old ↓' text to add because all activites are new to us, so we can stop listening too. */
-    if (oldAdded || isNaN(lastVisitDate))
-      mo.disconnect();
+function whenFeedHasBeenLoaded(feedElementParent, callback) {
+  const mutationObserver = new MutationObserver((mutationsList, mutationObserver) => {
+    callback(feedElementParent);
+    mutationObserver.disconnect();
   });
 
-  // Listen for initial/more activities loading to add the text blocks at the right places
-  mo.observe(feed, { childList: true });
+  mutationObserver.observe(feedElementParent, { childList: true });
+}
 
-  // Update last visit date
-  chrome.storage.sync.set({'last_visit_date': new Date().toISOString()});
+//
+// INIT
+//
+
+loadSyncStorageValues(values => {
+  syncStorageValues = values;
+  whenFeedHasBeenLoaded(getFeedElementParent(), addLabelsToFeed);
+  updateLastVisitDate();
 });
