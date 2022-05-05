@@ -2,8 +2,9 @@
 // VARIABLES
 //
 
-const STORAGE_KEY_LAST_VISIT_DATE = 'whats-new-github.last-visit-date';
+const ORGS_DASHBOARD_REGEXP = new RegExp('/orgs/(.*)/dashboard');
 
+let storageKeyLastVisitDate;
 let syncStorageValues;
 
 //
@@ -95,14 +96,42 @@ function getFeedElementFromParent(feedElementParent) {
   return feedElementParent.querySelector('div[data-repository-hovercards-enabled]');
 }
 
+function getFeedId() {
+  const { pathname } = location;
+
+  if (pathname === '/' || pathname === '/dashboard') {
+    // If the user is on his dashboard, then return a constant hard-coded id
+    return 'user_following';
+  } else if (ORGS_DASHBOARD_REGEXP.test(pathname)) {
+    // Else, if the user is on an organization's dashboard, then return an id based the organization's name
+    const matches = pathname.match(ORGS_DASHBOARD_REGEXP);
+
+    if (matches.length < 2) {
+      throw new Error("[whats-new-github] Looks like you're currently on an organization's dashboard, but the extension"
+        + " could not read the organization's name from the URL, so it can't know when you last visited this page."
+        + " Please open an issue at https://github.com/flawyte/whats-new-github and paste your current URL in the"
+        + " issue's description."
+      );
+    }
+
+    const orgName = matches[1];
+    return orgName;
+  } else {
+    throw new Error("[whats-new-github] Looks like you're currently on a GitHub page that is not yet supported by the"
+      + " extension. Please open an issue at https://github.com/flawyte/whats-new-github and paste your current URL"
+      + " in the issue's description."
+    );
+  }
+}
+
 function getLastVisitDate() {
   // Allow to return a predefined value from the local storage, for test purposes
-  const localStorageValue = localStorage.getItem(STORAGE_KEY_LAST_VISIT_DATE);
+  const localStorageValue = localStorage.getItem(storageKeyLastVisitDate);
   if (localStorageValue)
     return new Date(localStorageValue);
 
   // Otherwise return the real value
-  return new Date(syncStorageValues[STORAGE_KEY_LAST_VISIT_DATE]);
+  return new Date(syncStorageValues[storageKeyLastVisitDate]);
 }
 
 function getMostRecentSeenActivityBlock(feedElement, lastVisitDate) {
@@ -110,8 +139,13 @@ function getMostRecentSeenActivityBlock(feedElement, lastVisitDate) {
   if (isNaN(lastVisitDate))
     return null;
 
-  // Get all `relative-time` elements that are children of our feed element
-  const feedChildrenRelativeTimes = feedElement.querySelectorAll('relative-time');
+  // Get all of our feed's news' <relative-time> elements
+  const feedChildrenRelativeTimes = feedElement.querySelectorAll('span > relative-time');
+
+  // Note: Some news are sometimes grouped together and folded, and an 'Unfold' button allows the user to unfold the
+  // group so he can see the whole list. These 'grouped activities' can contain nested <relative-time> elements, one in
+  // each list item, which we're not interested in since we only want the dates and times of the news that are direct
+  // children of the feed, not of the nested ones. These dates and times are always direct children of a <span> element.
 
   // Find the first element showing an activity that happened before the user's last visit
   for (const relativeTimeElement of feedChildrenRelativeTimes) {
@@ -131,8 +165,13 @@ function getMostRecentUnseenActivityBlock(feedElement, lastVisitDate) {
   if (isNaN(lastVisitDate))
     return null;
 
-  // Get all `relative-time` elements that are children of our feed element
-  const feedChildrenRelativeTimes = feedElement.querySelectorAll('relative-time');
+  // Get all of our feed's news' <relative-time> elements
+  const feedChildrenRelativeTimes = feedElement.querySelectorAll('span > relative-time');
+
+  // Note: Some news are sometimes grouped together and folded, and an 'Unfold' button allows the user to unfold the
+  // group so he can see the whole list. These 'grouped activities' can contain nested <relative-time> elements, one in
+  // each list item, which we're not interested in since we only want the dates and times of the news that are direct
+  // children of the feed, not of the nested ones. These dates and times are always direct children of a <span> element.
 
   // Find the first element showing an activity that happened after the user's last visit
   for (const relativeTimeElement of feedChildrenRelativeTimes) {
@@ -148,7 +187,14 @@ function getMostRecentUnseenActivityBlock(feedElement, lastVisitDate) {
 }
 
 function getFeedElementParent() {
-  return document.querySelector('#panel-1');
+  if (isUserOnAnOrganizationDashboard())
+    return document.querySelector('#dashboard > .news');
+  else
+    return document.querySelector('#panel-1');
+}
+
+function isUserOnAnOrganizationDashboard() {
+  return ORGS_DASHBOARD_REGEXP.test(location.pathname);
 }
 
 function loadSyncStorageValues(callback) {
@@ -157,7 +203,7 @@ function loadSyncStorageValues(callback) {
 
 function updateLastVisitDate() {
   const map = {};
-  map[STORAGE_KEY_LAST_VISIT_DATE] = new Date().toISOString();
+  map[storageKeyLastVisitDate] = new Date().toISOString();
 
   chrome.storage.sync.set(map);
 }
@@ -174,6 +220,8 @@ function whenFeedHasBeenLoaded(feedElementParent, callback) {
 //
 // INIT
 //
+
+storageKeyLastVisitDate = 'whats-new-github.last-visit-date.' + getFeedId();
 
 loadSyncStorageValues(values => {
   syncStorageValues = values;

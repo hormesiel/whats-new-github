@@ -12,7 +12,8 @@
   "content_scripts": [{
     "matches": [
       "https://github.com/",
-      "https://github.com/dashboard"
+      "https://github.com/dashboard",
+      "https://github.com/orgs/*/dashboard"
     ],
     "js": ["index.js"],
     "run_at": "document_end"
