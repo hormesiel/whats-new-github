@@ -44,8 +44,21 @@ function addNewLabelToFeed(feedElement, lastVisitDate) {
 function addOldLabelToFeed(feedElement, lastVisitDate) {
   const mostRecentSeenActivityElement = getMostRecentSeenActivityBlock(feedElement, lastVisitDate);
 
-  if (mostRecentSeenActivityElement)
+  if (mostRecentSeenActivityElement) {
     addLabelBeforeElement('Old &nbsp;↓', mostRecentSeenActivityElement);
+  } else {
+    // Try again to add this label after more activities have been loaded by the user
+    const mutationObserver = new MutationObserver((mutationsList, mutationObserver) => {
+      mutationObserver.disconnect();
+
+      // When more activities are loaded, GitHub loads them in a child feed, so we need to try to add the label to
+      // this child feed and not the current one because no new HTML element will be added to it
+      const childFeedElement = feedElement.querySelector('div[data-repository-hovercards-enabled]');
+      addOldLabelToFeed(childFeedElement, lastVisitDate);
+    });
+
+    mutationObserver.observe(feedElement, { childList: true });
+  }
 }
 
 function createLabelElement(text) {
