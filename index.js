@@ -83,7 +83,10 @@ function createLabelElement(text) {
     text-transform: uppercase;
     top: 2rem;
     width: 5rem;
+    z-index: 1;
   `);
+
+  // Setting `z-index` fixes the labels being displayed below the code snippets some news contain.
 
   return div;
 }
