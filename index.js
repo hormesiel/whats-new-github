@@ -36,24 +36,24 @@ function addLabelsToFeed(feedElementParent) {
 }
 
 function addNewLabelToFeed(feedElement, lastVisitDate) {
-  const mostRecentUnseenActivityElement = getMostRecentUnseenActivityBlock(feedElement, lastVisitDate);
+  const mostRecentUnseenEventElement = getMostRecentUnseenEventBlock(feedElement, lastVisitDate);
 
-  if (mostRecentUnseenActivityElement)
-    addLabelBeforeElement('New &nbsp;↓', mostRecentUnseenActivityElement);
+  if (mostRecentUnseenEventElement)
+    addLabelBeforeElement('New &nbsp;↓', mostRecentUnseenEventElement);
 }
 
 function addOldLabelToFeed(feedElement, lastVisitDate) {
-  const mostRecentSeenActivityElement = getMostRecentSeenActivityBlock(feedElement, lastVisitDate);
+  const mostRecentSeenEventElement = getMostRecentSeenEventBlock(feedElement, lastVisitDate);
 
-  if (mostRecentSeenActivityElement) {
-    addLabelBeforeElement('Old &nbsp;↓', mostRecentSeenActivityElement);
+  if (mostRecentSeenEventElement) {
+    addLabelBeforeElement('Old &nbsp;↓', mostRecentSeenEventElement);
   } else {
-    // Try again to add this label after more activities have been loaded by the user
+    // Try again to add this label after more events have been loaded by the user
     const mutationObserver = new MutationObserver((mutationsList, mutationObserver) => {
       mutationObserver.disconnect();
 
-      // When more activities are loaded, GitHub loads them in a child feed, so we need to try to add the label to
-      // this child feed and not the current one because no new HTML element will be added to it
+      // When more events are loaded, GitHub loads them in a child <div>, so we need to try to add the label to this
+      // child <div> and not the current one because nothing will be added to it anymore
       const childFeedElement = feedElement.querySelector('div[data-repository-hovercards-enabled]');
       addOldLabelToFeed(childFeedElement, lastVisitDate);
     });
@@ -86,7 +86,7 @@ function createLabelElement(text) {
     z-index: 1;
   `);
 
-  // Setting `z-index` fixes the labels being displayed below the code snippets some news contain.
+  // Setting `z-index` fixes the labels being displayed below the code snippets some events contain
 
   return div;
 }
@@ -137,20 +137,20 @@ function getLastVisitDate() {
   return new Date(syncStorageValues[storageKeyLastVisitDate]);
 }
 
-function getMostRecentSeenActivityBlock(feedElement, lastVisitDate) {
+function getMostRecentSeenEventBlock(feedElement, lastVisitDate) {
   // If user has never visited this feed, then no element to return
   if (isNaN(lastVisitDate))
     return null;
 
-  // Get all of our feed's news' <relative-time> elements
+  // Get all of our feed's events' <relative-time> elements
   const feedChildrenRelativeTimes = feedElement.querySelectorAll('span > relative-time');
 
-  // Note: Some news are sometimes grouped together and folded, and an 'Unfold' button allows the user to unfold the
-  // group so he can see the whole list. These 'grouped activities' can contain nested <relative-time> elements, one in
-  // each list item, which we're not interested in since we only want the dates and times of the news that are direct
+  // Note: Some events are sometimes grouped together and folded, and an 'Unfold' button allows the user to unfold the
+  // group so he can see the whole list. These event groups can contain nested <relative-time> elements, one in each
+  // list item, which we're not interested in since we only want the dates and times of the events that are direct
   // children of the feed, not of the nested ones. These dates and times are always direct children of a <span> element.
 
-  // Find the first element showing an activity that happened before the user's last visit
+  // Find the first element showing an event that happened before the user's last visit
   for (const relativeTimeElement of feedChildrenRelativeTimes) {
     const datetimeAttr = relativeTimeElement.getAttribute('datetime');
     const itemDate = new Date(datetimeAttr);
@@ -159,24 +159,24 @@ function getMostRecentSeenActivityBlock(feedElement, lastVisitDate) {
       return relativeTimeElement.closest('.body').parentElement;
   }
 
-  // If the element was not found, which means that it's older than all the activities shown on the page
+  // If the element was not found, which means that it's older than all the events shown on the page
   return null;
 }
 
-function getMostRecentUnseenActivityBlock(feedElement, lastVisitDate) {
+function getMostRecentUnseenEventBlock(feedElement, lastVisitDate) {
   // If user has never visited this feed, then no element to return
   if (isNaN(lastVisitDate))
     return null;
 
-  // Get all of our feed's news' <relative-time> elements
+  // Get all of our feed's events' <relative-time> elements
   const feedChildrenRelativeTimes = feedElement.querySelectorAll('span > relative-time');
 
-  // Note: Some news are sometimes grouped together and folded, and an 'Unfold' button allows the user to unfold the
-  // group so he can see the whole list. These 'grouped activities' can contain nested <relative-time> elements, one in
-  // each list item, which we're not interested in since we only want the dates and times of the news that are direct
+  // Note: Some events are sometimes grouped together and folded, and an 'Unfold' button allows the user to unfold the
+  // group so he can see the whole list. These event groups can contain nested <relative-time> elements, one in each
+  // list item, which we're not interested in since we only want the dates and times of the events that are direct
   // children of the feed, not of the nested ones. These dates and times are always direct children of a <span> element.
 
-  // Find the first element showing an activity that happened after the user's last visit
+  // Find the first element showing an event that happened after the user's last visit
   for (const relativeTimeElement of feedChildrenRelativeTimes) {
     const datetimeAttr = relativeTimeElement.getAttribute('datetime');
     const itemDate = new Date(datetimeAttr);
@@ -185,7 +185,7 @@ function getMostRecentUnseenActivityBlock(feedElement, lastVisitDate) {
       return relativeTimeElement.closest('.body').parentElement;
   }
 
-  // If no element was found, it means that all shown activities are older than the user's last visit
+  // If no element was found, it means that all shown events are older than the user's last visit
   return null;
 }
 
