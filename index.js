@@ -2,6 +2,8 @@
 // VARIABLES
 //
 
+const FEED_TYPE_1 = 1;
+const FEED_TYPE_2 = 2;
 const ORGS_DASHBOARD_REGEXP = new RegExp('/orgs/(.*)/dashboard');
 
 let storageKeyLastVisitDate;
@@ -11,42 +13,53 @@ let syncStorageValues;
 // FUNCTIONS
 //
 
-function addLabelBeforeElement(text, element) {
+function addLabelBeforeElement(text, element, feedType) {
   const labelElement = createLabelElement(text);
 
   // Insert the element in the page
   element.parentNode.insertBefore(labelElement, element);
 
-  // Remove the previous element's bottom order if needed (not needed if there's no element before the label)
+  // Remove the previous element's bottom order if needed (not needed if there's no element before the label or we're
+  // in the new 'For you' feed)
   const previousElement = labelElement.previousElementSibling;
-  if (previousElement)
-    previousElement.querySelector('.border-bottom').classList.remove('border-bottom');
+  if (previousElement) {
+    if (feedType === FEED_TYPE_1)
+      previousElement.querySelector('.border-bottom').classList.remove('border-bottom');
+  }
 
   // Increase top margin if label is at the top of the feed
-  else
+  else {
     labelElement.style.marginTop = '2rem';
+  }
 }
 
-function addLabelsToFeed(feedElementParent) {
-  const feedElement = getFeedElementFromParent(feedElementParent);
-  const lastVisitDate = getLastVisitDate();
+function addLabelsToFeed(feedElementParent, feedType, feedId) {
+  const feedElement = getFeedElementFromItsParent(feedElementParent);
+  const lastVisitDate = getLastVisitDate(feedId);
 
-  addNewLabelToFeed(feedElement, lastVisitDate);
-  addOldLabelToFeed(feedElement, lastVisitDate);
+  addNewLabelToFeed(feedElement, lastVisitDate, feedType);
+  addOldLabelToFeed(feedElement, lastVisitDate, feedType);
 }
 
-function addNewLabelToFeed(feedElement, lastVisitDate) {
-  const mostRecentUnseenEventElement = getMostRecentUnseenEventBlock(feedElement, lastVisitDate);
+function addLabelsToFeedAndUpdateLastVisitDate(feedElementParent, feedType) {
+  const feedId = getFeedId(location.pathname, feedType);
+
+  addLabelsToFeed(feedElementParent, feedType, feedId);
+  updateLastVisitDate(feedId);
+}
+
+function addNewLabelToFeed(feedElement, lastVisitDate, feedType) {
+  const mostRecentUnseenEventElement = getMostRecentUnseenEventBlock(feedElement, lastVisitDate, feedType);
 
   if (mostRecentUnseenEventElement)
-    addLabelBeforeElement('New &nbsp;↓', mostRecentUnseenEventElement);
+    addLabelBeforeElement('New &nbsp;↓', mostRecentUnseenEventElement, feedType);
 }
 
-function addOldLabelToFeed(feedElement, lastVisitDate) {
-  const mostRecentSeenEventElement = getMostRecentSeenEventBlock(feedElement, lastVisitDate);
+function addOldLabelToFeed(feedElement, lastVisitDate, feedType) {
+  const mostRecentSeenEventElement = getMostRecentSeenEventBlock(feedElement, lastVisitDate, feedType);
 
   if (mostRecentSeenEventElement) {
-    addLabelBeforeElement('Old &nbsp;↓', mostRecentSeenEventElement);
+    addLabelBeforeElement('Old &nbsp;↓', mostRecentSeenEventElement, feedType);
   } else {
     // Try again to add this label after more events have been loaded by the user
     const mutationObserver = new MutationObserver((mutationsList, mutationObserver) => {
@@ -60,6 +73,10 @@ function addOldLabelToFeed(feedElement, lastVisitDate) {
 
     mutationObserver.observe(feedElement, { childList: true });
   }
+}
+
+function computeLastVisitDateStorageKey(feedId) {
+  return 'whats-new-github.last-visit-date.' + feedId;
 }
 
 function createLabelElement(text) {
@@ -91,23 +108,34 @@ function createLabelElement(text) {
   return div;
 }
 
-function dashboardHasTabs() {
-  return document.querySelector('#dashboard tab-container') != null;
+function getEventElementFromItsDatetimeElement(datetimeElement, feedType) {
+  if (feedType === FEED_TYPE_1)
+    return datetimeElement.closest('.body').parentElement;
+  else
+    return datetimeElement.closest('article');
 }
 
-function getFeedElementFromParent(feedElementParent) {
+function getFeedElementFromItsParent(feedElementParent) {
   return feedElementParent.querySelector('div[data-repository-hovercards-enabled]');
 }
 
-function getFeedId() {
-  const { pathname } = location;
+function getFeedEventsDatetimeElementsSelector(feedType) {
+  if (feedType === FEED_TYPE_1)
+    return 'span > relative-time';
+  else
+    return 'article > header > h5 > time-ago';
+}
 
-  if (pathname === '/' || pathname === '/dashboard') {
+function getFeedId(locationPathname, feedType) {
+  if (locationPathname === '/' || locationPathname === '/dashboard') {
     // If the user is on his dashboard, then return a constant hard-coded id
-    return 'user_following';
-  } else if (ORGS_DASHBOARD_REGEXP.test(pathname)) {
+    if (feedType === FEED_TYPE_1)
+      return 'user_following';
+    else
+      return 'user_for_you';
+  } else if (ORGS_DASHBOARD_REGEXP.test(locationPathname)) {
     // Else, if the user is on an organization's dashboard, then return an id based the organization's name
-    const matches = pathname.match(ORGS_DASHBOARD_REGEXP);
+    const matches = locationPathname.match(ORGS_DASHBOARD_REGEXP);
 
     if (matches.length < 2) {
       throw new Error("[whats-new-github] Looks like you're currently on an organization's dashboard, but the extension"
@@ -127,73 +155,72 @@ function getFeedId() {
   }
 }
 
-function getLastVisitDate() {
+function getLastVisitDate(feedId) {
+  const storageKey = computeLastVisitDateStorageKey(feedId);
+
   // Allow to return a predefined value from the local storage, for test purposes
-  const localStorageValue = localStorage.getItem(storageKeyLastVisitDate);
+  const localStorageValue = localStorage.getItem(storageKey);
   if (localStorageValue)
     return new Date(localStorageValue);
 
   // Otherwise return the real value
-  return new Date(syncStorageValues[storageKeyLastVisitDate]);
+  return new Date(syncStorageValues[storageKey]);
 }
 
-function getMostRecentSeenEventBlock(feedElement, lastVisitDate) {
-  // If user has never visited this feed, then no element to return
+function getMostRecentSeenEventBlock(feedElement, lastVisitDate, feedType) {
+  // If the user has never visited this feed, then no element to return
   if (isNaN(lastVisitDate))
     return null;
 
-  // Get all of our feed's events' <relative-time> elements
-  const feedChildrenRelativeTimes = feedElement.querySelectorAll('span > relative-time');
-
-  // Note: Some events are sometimes grouped together and folded, and an 'Unfold' button allows the user to unfold the
-  // group so he can see the whole list. These event groups can contain nested <relative-time> elements, one in each
-  // list item, which we're not interested in since we only want the dates and times of the events that are direct
-  // children of the feed, not of the nested ones. These dates and times are always direct children of a <span> element.
+  // Get the dates and times of all the events in the feed
+  const datetimeElementsSelector = getFeedEventsDatetimeElementsSelector(feedType);
+  const feedEventsDatetimeElements = feedElement.querySelectorAll(datetimeElementsSelector);
 
   // Find the first element showing an event that happened before the user's last visit
-  for (const relativeTimeElement of feedChildrenRelativeTimes) {
-    const datetimeAttr = relativeTimeElement.getAttribute('datetime');
-    const itemDate = new Date(datetimeAttr);
+  for (const datetimeElement of feedEventsDatetimeElements) {
+    const datetimeAttr = datetimeElement.getAttribute('datetime');
+    const date = new Date(datetimeAttr);
 
-    if (itemDate < lastVisitDate)
-      return relativeTimeElement.closest('.body').parentElement;
+    if (date < lastVisitDate)
+      return getEventElementFromItsDatetimeElement(datetimeElement, feedType);
   }
 
   // If the element was not found, which means that it's older than all the events shown on the page
   return null;
 }
 
-function getMostRecentUnseenEventBlock(feedElement, lastVisitDate) {
-  // If user has never visited this feed, then no element to return
+function getMostRecentUnseenEventBlock(feedElement, lastVisitDate, feedType) {
+  // If the user has never visited this feed, then no element to return
   if (isNaN(lastVisitDate))
     return null;
 
-  // Get all of our feed's events' <relative-time> elements
-  const feedChildrenRelativeTimes = feedElement.querySelectorAll('span > relative-time');
-
-  // Note: Some events are sometimes grouped together and folded, and an 'Unfold' button allows the user to unfold the
-  // group so he can see the whole list. These event groups can contain nested <relative-time> elements, one in each
-  // list item, which we're not interested in since we only want the dates and times of the events that are direct
-  // children of the feed, not of the nested ones. These dates and times are always direct children of a <span> element.
+  // Get the dates and times of all the events in the feed
+  const datetimeElementsSelector = getFeedEventsDatetimeElementsSelector(feedType);
+  const feedEventsDatetimeElements = feedElement.querySelectorAll(datetimeElementsSelector);
 
   // Find the first element showing an event that happened after the user's last visit
-  for (const relativeTimeElement of feedChildrenRelativeTimes) {
-    const datetimeAttr = relativeTimeElement.getAttribute('datetime');
-    const itemDate = new Date(datetimeAttr);
+  for (const datetimeElement of feedEventsDatetimeElements) {
+    const datetimeAttr = datetimeElement.getAttribute('datetime');
+    const date = new Date(datetimeAttr);
 
-    if (itemDate > lastVisitDate)
-      return relativeTimeElement.closest('.body').parentElement;
+    if (date > lastVisitDate)
+      return getEventElementFromItsDatetimeElement(datetimeElement, feedType);
   }
 
   // If no element was found, it means that all shown events are older than the user's last visit
   return null;
 }
 
-function getFeedElementParent() {
-  if (isUserOnAnOrganizationDashboard())
-    return document.querySelector('#dashboard > .news');
-  else
-    return document.querySelector('#panel-1');
+function getOrganizationFeedElementParent() {
+  return document.querySelector('#dashboard > .news');
+}
+
+function getUserFollowingFeedElementParent() {
+  return document.querySelector('#panel-1');
+}
+
+function getUserForYouFeedElementParent() {
+  return document.querySelector('#panel-2 > .js-feed-container');
 }
 
 function isUserOnAnOrganizationDashboard() {
@@ -204,17 +231,20 @@ function loadSyncStorageValues(callback) {
   return chrome.storage.sync.get(null, callback);
 }
 
-function updateLastVisitDate() {
+function updateLastVisitDate(feedId) {
+  const storageKey = computeLastVisitDateStorageKey(feedId);
+
   const map = {};
-  map[storageKeyLastVisitDate] = new Date().toISOString();
+  map[storageKey] = new Date().toISOString();
 
   chrome.storage.sync.set(map);
 }
 
-function whenFeedHasBeenLoaded(feedElementParent, callback) {
+function whenFeedHasBeenLoaded(feedElementParent, feedType, callback) {
   const mutationObserver = new MutationObserver((mutationsList, mutationObserver) => {
-    callback(feedElementParent);
     mutationObserver.disconnect();
+
+    callback(feedElementParent, feedType);
   });
 
   mutationObserver.observe(feedElementParent, { childList: true });
@@ -224,10 +254,13 @@ function whenFeedHasBeenLoaded(feedElementParent, callback) {
 // INIT
 //
 
-storageKeyLastVisitDate = 'whats-new-github.last-visit-date.' + getFeedId();
-
 loadSyncStorageValues(values => {
   syncStorageValues = values;
-  whenFeedHasBeenLoaded(getFeedElementParent(), addLabelsToFeed);
-  updateLastVisitDate();
+
+  if (isUserOnAnOrganizationDashboard()) {
+    whenFeedHasBeenLoaded(getOrganizationFeedElementParent(), FEED_TYPE_1, addLabelsToFeedAndUpdateLastVisitDate);
+  } else {
+    whenFeedHasBeenLoaded(getUserFollowingFeedElementParent(), FEED_TYPE_1, addLabelsToFeedAndUpdateLastVisitDate);
+    whenFeedHasBeenLoaded(getUserForYouFeedElementParent(), FEED_TYPE_2, addLabelsToFeedAndUpdateLastVisitDate);
+  }
 });
