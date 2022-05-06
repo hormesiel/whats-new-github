@@ -67,7 +67,7 @@ function addOldLabelToFeed(feedElement, lastVisitDate, feedType) {
 
       // When more events are loaded, GitHub loads them in a child <div>, so we need to try to add the label to this
       // child <div> and not the current one because nothing will be added to it anymore
-      const childFeedElement = feedElement.querySelector('div[data-repository-hovercards-enabled]');
+      const childFeedElement = getFeedElementFromItsParent(feedElement);
       addOldLabelToFeed(childFeedElement, lastVisitDate);
     });
 
@@ -127,18 +127,12 @@ function getFeedEventsDatetimeElementsSelector(feedType) {
 }
 
 function getFeedId(locationPathname, feedType) {
-  if (locationPathname === '/' || locationPathname === '/dashboard') {
-    // If the user is on his dashboard, then return a constant hard-coded id
-    if (feedType === FEED_TYPE_1)
-      return 'user_following';
-    else
-      return 'user_for_you';
-  } else if (ORGS_DASHBOARD_REGEXP.test(locationPathname)) {
-    // Else, if the user is on an organization's dashboard, then return an id based the organization's name
+  // If the user is on an organization dashboard, then return an id based the organization's name
+  if (isUserOnAnOrganizationDashboard()) {
     const matches = locationPathname.match(ORGS_DASHBOARD_REGEXP);
 
     if (matches.length < 2) {
-      throw new Error("[whats-new-github] Looks like you're currently on an organization's dashboard, but the extension"
+      throw new Error("[whats-new-github] Looks like you're currently on an organization dashboard, but the extension"
         + " could not read the organization's name from the URL, so it can't know when you last visited this page."
         + " Please open an issue at https://github.com/flawyte/whats-new-github and paste your current URL in the"
         + " issue's description."
@@ -147,11 +141,14 @@ function getFeedId(locationPathname, feedType) {
 
     const orgName = matches[1];
     return orgName;
-  } else {
-    throw new Error("[whats-new-github] Looks like you're currently on a GitHub page that is not yet supported by the"
-      + " extension. Please open an issue at https://github.com/flawyte/whats-new-github and paste your current URL"
-      + " in the issue's description."
-    );
+  }
+
+  // Else (= the user is on his personal dashboard), then return a constant hard-coded id
+  else {
+    if (feedType === FEED_TYPE_1)
+      return 'user_following';
+    else
+      return 'user_for_you';
   }
 }
 
