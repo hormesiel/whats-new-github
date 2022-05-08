@@ -2,8 +2,8 @@
 // VARIABLES
 //
 
-const FEED_TYPE_1 = 1;
-const FEED_TYPE_2 = 2;
+const FEED_TYPE_1 = 1; // User's 'Following' feed & organizations feeds
+const FEED_TYPE_2 = 2; // User's 'For you' feed
 const ORGS_DASHBOARD_REGEXP = new RegExp('/orgs/(.*)/dashboard');
 
 let storageKeyLastVisitDate;
@@ -14,7 +14,7 @@ let syncStorageValues;
 //
 
 function addLabelBeforeElement(text, element, feedType) {
-  const labelElement = createLabelElement(text);
+  const labelElement = createLabelElement(text, feedType);
 
   // Insert the element in the page
   element.parentNode.insertBefore(labelElement, element);
@@ -37,8 +37,12 @@ function addLabelsToFeed(feedElementParent, feedType, feedId) {
   const feedElement = getFeedElementFromItsParent(feedElementParent);
   const lastVisitDate = getLastVisitDate(feedId);
 
-  addNewLabelToFeed(feedElement, lastVisitDate, feedType);
-  addOldLabelToFeed(feedElement, lastVisitDate, feedType);
+  if (feedType === FEED_TYPE_1) {
+    addNewLabelToFeedType1(feedElement, lastVisitDate);
+    addOldLabelToFeedType1(feedElement, lastVisitDate);
+  } else {
+    addNewLabelsToFeedType2(feedElement, lastVisitDate);
+  }
 }
 
 function addLabelsToFeedAndUpdateLastVisitDate(feedElementParent, feedType) {
@@ -48,18 +52,44 @@ function addLabelsToFeedAndUpdateLastVisitDate(feedElementParent, feedType) {
   updateLastVisitDate(feedId);
 }
 
-function addNewLabelToFeed(feedElement, lastVisitDate, feedType) {
-  const mostRecentUnseenEventElement = getMostRecentUnseenEventBlock(feedElement, lastVisitDate, feedType);
+function addNewLabelsToFeedType2(feedElement, lastVisitDate) {
+  // If the user has never visited this feed, then do nothing
+  if (isNaN(lastVisitDate))
+    return null;
 
-  if (mostRecentUnseenEventElement)
-    addLabelBeforeElement('New &nbsp;↓', mostRecentUnseenEventElement, feedType);
+  // Get the dates and times of all the events in the feed
+  const datetimeElementsSelector = getFeedEventsDatetimeElementsSelector(FEED_TYPE_2);
+  const feedEventsDatetimeElements = feedElement.querySelectorAll(datetimeElementsSelector);
+
+  // Add a 'NEW' label to all events that happened after the user's last visit
+  for (const datetimeElement of feedEventsDatetimeElements) {
+    const datetimeAttr = datetimeElement.getAttribute('datetime');
+    const date = new Date(datetimeAttr);
+
+    if (date > lastVisitDate)
+      addNewLabelToFeedType2Event(datetimeElement);
+  }
 }
 
-function addOldLabelToFeed(feedElement, lastVisitDate, feedType) {
-  const mostRecentSeenEventElement = getMostRecentSeenEventBlock(feedElement, lastVisitDate, feedType);
+function addNewLabelToFeedType1(feedElement, lastVisitDate) {
+  const mostRecentUnseenEventElement = getMostRecentUnseenEventBlock(feedElement, lastVisitDate, FEED_TYPE_1);
+
+  if (mostRecentUnseenEventElement)
+    addLabelBeforeElement('New &nbsp;↓', mostRecentUnseenEventElement, FEED_TYPE_1);
+}
+
+function addNewLabelToFeedType2Event(timeAgoElement) {
+  const labelElement = createLabelElement('NEW', FEED_TYPE_2);
+
+  // Insert the element in the page
+  timeAgoElement.parentNode.appendChild(labelElement);
+}
+
+function addOldLabelToFeedType1(feedElement, lastVisitDate) {
+  const mostRecentSeenEventElement = getMostRecentSeenEventBlock(feedElement, lastVisitDate, FEED_TYPE_1);
 
   if (mostRecentSeenEventElement) {
-    addLabelBeforeElement('Old &nbsp;↓', mostRecentSeenEventElement, feedType);
+    addLabelBeforeElement('Old &nbsp;↓', mostRecentSeenEventElement, FEED_TYPE_1);
   } else {
     // Try again to add this label after more events have been loaded by the user
     const mutationObserver = new MutationObserver((mutationsList, mutationObserver) => {
@@ -68,7 +98,7 @@ function addOldLabelToFeed(feedElement, lastVisitDate, feedType) {
       // When more events are loaded, GitHub loads them in a child <div>, so we need to try to add the label to this
       // child <div> and not the current one because nothing will be added to it anymore
       const childFeedElement = getFeedElementFromItsParent(feedElement);
-      addOldLabelToFeed(childFeedElement, lastVisitDate);
+      addOldLabelToFeedType1(childFeedElement, lastVisitDate);
     });
 
     mutationObserver.observe(feedElement, { childList: true });
@@ -79,31 +109,45 @@ function computeLastVisitDateStorageKey(feedId) {
   return 'whats-new-github.last-visit-date.' + feedId;
 }
 
-function createLabelElement(text) {
+function createLabelElement(text, feedType) {
   const div = document.createElement('div');
   div.innerHTML = text;
 
-  /* Using GitHub classes to ensure UI consistency. Sets :
-  - background
-  - border
-  - border-radius
-  - color */
-  div.classList.add('Box', 'text-gray');
+  if (feedType === FEED_TYPE_1) {
 
-  div.setAttribute('style', `
-    box-shadow: 0 3px 5px #00000011;
-    font-size: 0.8rem;
-    margin: 1rem auto;
-    padding: 0.4rem 1rem;
-    position: sticky;
-    text-align: center;
-    text-transform: uppercase;
-    top: 2rem;
-    width: 5rem;
-    z-index: 1;
-  `);
+    /* Using GitHub classes to ensure UI consistency. Sets :
+    - background
+    - border
+    - border-radius
+    - color */
+    div.classList.add('Box', 'text-gray');
 
-  // Setting `z-index` fixes the labels being displayed below the code snippets some events contain
+    div.setAttribute('style', `
+      box-shadow: 0 3px 5px #00000011;
+      font-size: 0.8rem;
+      margin: 1rem auto;
+      padding: 0.4rem 1rem;
+      position: sticky;
+      text-align: center;
+      text-transform: uppercase;
+      top: 2rem;
+      width: 5rem;
+      z-index: 1;
+    `);
+
+    // Setting `z-index` fixes the labels being displayed below the code snippets some events contain
+
+    return div;
+  } else {
+    div.setAttribute('style', `
+      background-color: #1168e3; /* === GitHub's '--color-ansi-blue-bright' */
+      border-radius: 1rem;
+      color: white;
+      font-variant: all-small-caps;
+      margin-left: 0.5rem;
+      padding: 0 0.5rem;
+    `);
+  }
 
   return div;
 }
