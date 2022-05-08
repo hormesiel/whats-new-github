@@ -268,8 +268,8 @@ function isUserOnAnOrganizationDashboard() {
   return ORGS_DASHBOARD_REGEXP.test(location.pathname);
 }
 
-function loadSyncStorageValues(callback) {
-  return chrome.storage.sync.get(null, callback);
+async function loadSyncStorageValues() {
+  return chrome.storage.sync.get(null);
 }
 
 function updateLastVisitDate(feedId) {
@@ -295,8 +295,8 @@ function whenFeedHasBeenLoaded(feedElementParent, feedType, callback) {
 // INIT
 //
 
-loadSyncStorageValues(values => {
-  syncStorageValues = values;
+(async () => {
+  syncStorageValues = await loadSyncStorageValues();
 
   if (isUserOnAnOrganizationDashboard()) {
     whenFeedHasBeenLoaded(getOrganizationFeedElementParent(), FEED_TYPE_1, addLabelsToFeedAndUpdateLastVisitDate);
@@ -304,4 +304,4 @@ loadSyncStorageValues(values => {
     whenFeedHasBeenLoaded(getUserFollowingFeedElementParent(), FEED_TYPE_1, addLabelsToFeedAndUpdateLastVisitDate);
     whenFeedHasBeenLoaded(getUserForYouFeedElementParent(), FEED_TYPE_2, addLabelsToFeedAndUpdateLastVisitDate);
   }
-});
+})();
