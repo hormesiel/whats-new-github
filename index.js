@@ -19,16 +19,9 @@ function addLabelBeforeElement(text, element, feedType) {
   // Insert the element in the page
   element.parentNode.insertBefore(labelElement, element);
 
-  // Remove the previous element's bottom order if needed (not needed if there's no element before the label or we're
-  // in the new 'For you' feed)
-  const previousElement = labelElement.previousElementSibling;
-  if (previousElement) {
-    if (feedType === FEED_TYPE_1)
-      previousElement.querySelector('.border-bottom').classList.remove('border-bottom');
-  }
-
   // Increase top margin if label is at the top of the feed
-  else {
+  const previousElement = labelElement.previousElementSibling;
+  if (!previousElement) {
     labelElement.style.marginTop = '2rem';
   }
 }
