@@ -153,14 +153,14 @@ function getEventElementFromItsDatetimeElement(datetimeElement, feedType) {
 }
 
 function getFeedElementFromItsParent(feedElementParent) {
-  return feedElementParent.querySelector('div[data-repository-hovercards-enabled]');
+  return feedElementParent.querySelector('[data-repository-hovercards-enabled]');
 }
 
 function getFeedEventsDatetimeElementsSelector(feedType) {
   if (feedType === FEED_TYPE_1)
     return 'span > relative-time';
   else
-    return 'article > header > h5 > time-ago';
+    return 'article > header > h5 > relative-time';
 }
 
 function getFeedId(locationPathname, feedType) {
@@ -254,7 +254,7 @@ function getUserFollowingFeedElementParent() {
 }
 
 function getUserForYouFeedElementParent() {
-  return document.querySelector('#panel-2 > .js-feed-container');
+  return document.querySelector('#panel-2 [data-target="feed-container.content"]');
 }
 
 function isUserOnAnOrganizationDashboard() {
