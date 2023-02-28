@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "What's New on GitHub",
-  "version": "3.0.0",
+  "version": "3.0.1",
 
   "description": "See what's new and what's not in your GitHub dashboard's feeds and in your organizations' feeds.",
   "icons": {
