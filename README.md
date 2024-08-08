@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> Repository archived & extension unpublished since it's not necessary nor useful anymore with the new dashboard.
+
 # Purpose
 
 This extension helps you see what events have happened since your last visit to GitHub and what events you have already seen. It is compatible with both personal news feeds as well as organizations feeds.
